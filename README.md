@@ -1,6 +1,6 @@
 # BF Filter
 
-Chrome extension that filters low-value comments on YC's BF forum. Hides "congrats!", "+1", "W", and other fluff so you can focus on substantive discussion.
+Chrome extension that filters low-value comments on the BF forum. Hides "congrats!", "+1", "W", and other fluff so you can focus on substantive discussion.
 
 ## How It Works
 
@@ -14,7 +14,7 @@ Comments are filtered through a 3-phase pipeline:
 
 ### Protections
 
-- **YC staff comments are never filtered** — Comments from users with the orange "YC" badge are always shown.
+- **Staff comments are never filtered** — Comments from users with a staff badge are always shown.
 - **Valuable reply threads are preserved** — If a low-value comment has substantive replies underneath it, the parent comment stays visible to preserve thread context.
 - **Replies to valuable comments are kept** — If a parent comment is substantive, all of its replies stay visible regardless of their individual content. This preserves conversational context.
 
@@ -37,7 +37,7 @@ Click to reveal all filtered comments (shown dimmed with a left border accent). 
 3. Open Chrome and navigate to `chrome://extensions`
 4. Enable **Developer mode** (toggle in the top right)
 5. Click **Load unpacked** and select the `dist/` folder
-6. Navigate to any post on [BF](https://bookface.ycombinator.com) — the extension activates automatically on `/posts/*` pages
+6. Navigate to any post on BF — the extension activates automatically on `/posts/*` pages
 
 ## Configuration
 
