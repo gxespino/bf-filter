@@ -64,12 +64,10 @@ export class DomManipulator {
       this.summaryBar.id = SUMMARY_BAR_ID;
       this.summaryBar.addEventListener('click', () => this.toggleReveal());
 
-      // Place above the first comment <ol> on the page
-      const commentList = document.querySelector('ol');
-      if (commentList) {
-        commentList.parentElement?.insertBefore(this.summaryBar, commentList);
-      } else {
-        document.body.appendChild(this.summaryBar);
+      // Find the <ol> that actually contains comments, not a random <ol> in the post body
+      const commentOl = document.querySelector('ol:has(div[id^="comment-"])');
+      if (commentOl) {
+        commentOl.parentElement?.insertBefore(this.summaryBar, commentOl);
       }
     }
 

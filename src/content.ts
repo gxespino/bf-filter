@@ -159,6 +159,20 @@ async function processSingleComment(el: HTMLElement): Promise<void> {
   manipulator.applyFilter(getFilterTarget(el), result.reason);
 }
 
+// Re-process on SPA navigation. BF uses client-side routing so the content
+// script only loads once — we detect URL changes to catch thread navigations.
+function watchForSpaNavigation(): void {
+  let lastUrl = location.href;
+  new MutationObserver(() => {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      manipulator.removeAllFilters();
+      // Short delay lets the SPA finish rendering the new page's comments
+      setTimeout(() => processAllComments(), 300);
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+}
+
 async function init(): Promise<void> {
   currentSettings = await loadSettings();
   if (!currentSettings.enabled) return;
@@ -171,6 +185,8 @@ async function init(): Promise<void> {
     newPosts.forEach((el) => processSingleComment(el));
   });
   observer.start(COMMENT_SELECTOR);
+
+  watchForSpaNavigation();
 
   onSettingsChanged(async (newSettings) => {
     currentSettings = newSettings;
