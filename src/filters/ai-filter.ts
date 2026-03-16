@@ -104,7 +104,7 @@ export async function classifyBatch(
     });
 
     if (!response.ok) {
-      console.warn('[Bookface Filter] AI API error:', response.status);
+      console.warn('[BF Filter] AI API error:', response.status);
       return results;
     }
 
@@ -114,7 +114,7 @@ export async function classifyBatch(
     // Response may include markdown code fences; extract the JSON array
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
-      console.warn('[Bookface Filter] AI response missing JSON array');
+      console.warn('[BF Filter] AI response missing JSON array');
       return results;
     }
 
@@ -144,7 +144,7 @@ export async function classifyBatch(
 
     saveCache(cache);
   } catch (err) {
-    console.warn('[Bookface Filter] AI batch failed:', err);
+    console.warn('[BF Filter] AI batch failed:', err);
   }
 
   return results;

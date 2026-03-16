@@ -7,7 +7,7 @@ import { DomManipulator } from './dom/manipulator';
 import { PostObserver } from './dom/observer';
 import { loadSettings, onSettingsChanged } from './storage/settings';
 
-// Bookface comments are <div id="comment-XXXXX"> inside <li> elements.
+// BF comments are <div id="comment-XXXXX"> inside <li> elements.
 // We filter against the comment div but hide/reveal the parent <li>.
 const COMMENT_SELECTOR = 'div[id^="comment-"]';
 

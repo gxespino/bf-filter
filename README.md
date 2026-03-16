@@ -1,6 +1,6 @@
-# Bookface Filter
+# BF Filter
 
-Chrome extension that filters low-value comments on YC's Bookface forum. Hides "congrats!", "+1", "W", and other fluff so you can focus on substantive discussion.
+Chrome extension that filters low-value comments on YC's BF forum. Hides "congrats!", "+1", "W", and other fluff so you can focus on substantive discussion.
 
 ## How It Works
 
@@ -34,7 +34,7 @@ Click to reveal all filtered comments (shown dimmed with a left border accent). 
 3. Open Chrome and navigate to `chrome://extensions`
 4. Enable **Developer mode** (toggle in the top right)
 5. Click **Load unpacked** and select the `dist/` folder
-6. Navigate to [Bookface](https://bookface.ycombinator.com) — the extension activates automatically
+6. Navigate to [BF](https://bookface.ycombinator.com) — the extension activates automatically
 
 ## Configuration
 
@@ -66,7 +66,7 @@ npm run dev
 npm run build
 ```
 
-The built extension is output to `dist/`. After rebuilding, go to `chrome://extensions` and click the reload button on the Bookface Filter card.
+The built extension is output to `dist/`. After rebuilding, go to `chrome://extensions` and click the reload button on the BF Filter card.
 
 ### Project Structure
 
