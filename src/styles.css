@@ -1,0 +1,30 @@
+/* Summary bar — single toggle for all filtered comments */
+#bf-filter-summary {
+  padding: 8px 14px;
+  margin: 4px 0 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, color 0.15s;
+  text-align: center;
+}
+
+#bf-filter-summary:hover {
+  background: #ebebeb;
+  color: #444;
+}
+
+/* Revealed filtered comments get a subtle left border accent */
+.bf-filter-revealed {
+  border-left: 3px solid #e0e0e0 !important;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.bf-filter-revealed:hover {
+  opacity: 1;
+}
