@@ -4,6 +4,8 @@ Chrome extension that filters low-value comments on YC's BF forum. Hides "congra
 
 ## How It Works
 
+The extension only runs on post pages (`/posts/*`) — it does nothing on the feed, settings, or other non-post pages. It also handles SPA navigation, so clicking between threads re-processes comments automatically.
+
 Comments are filtered through a 3-phase pipeline:
 
 1. **Length filter** — Comments under a configurable character threshold (default: 50) are filtered instantly.
@@ -14,6 +16,7 @@ Comments are filtered through a 3-phase pipeline:
 
 - **YC staff comments are never filtered** — Comments from users with the orange "YC" badge are always shown.
 - **Valuable reply threads are preserved** — If a low-value comment has substantive replies underneath it, the parent comment stays visible to preserve thread context.
+- **Replies to valuable comments are kept** — If a parent comment is substantive, all of its replies stay visible regardless of their individual content. This preserves conversational context.
 
 ### UI
 
@@ -34,7 +37,7 @@ Click to reveal all filtered comments (shown dimmed with a left border accent). 
 3. Open Chrome and navigate to `chrome://extensions`
 4. Enable **Developer mode** (toggle in the top right)
 5. Click **Load unpacked** and select the `dist/` folder
-6. Navigate to [BF](https://bookface.ycombinator.com) — the extension activates automatically
+6. Navigate to any post on [BF](https://bookface.ycombinator.com) — the extension activates automatically on `/posts/*` pages
 
 ## Configuration
 

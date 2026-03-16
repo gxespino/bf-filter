@@ -7,12 +7,13 @@ import { DomManipulator } from './dom/manipulator';
 import { PostObserver } from './dom/observer';
 import { loadSettings, onSettingsChanged } from './storage/settings';
 
-// BF comments are <div id="comment-XXXXX"> inside <li> elements.
-// We filter against the comment div but hide/reveal the parent <li>.
+const POST_PATH_PATTERN = /^\/posts\/.+/;
 const COMMENT_SELECTOR = 'div[id^="comment-"]';
-
-// AI filter skips comments longer than this — they're almost certainly substantive
 const AI_MAX_CHAR_LENGTH = 500;
+
+function isPostPage(): boolean {
+  return POST_PATH_PATTERN.test(location.pathname);
+}
 
 const lengthFilter = new LengthFilter();
 const keywordFilter = new KeywordFilter();
@@ -35,8 +36,7 @@ function isYCStaff(el: HTMLElement): boolean {
   return false;
 }
 
-// A comment has valuable replies if any descendant comment is non-filtered or from YC staff.
-// Uses `:scope > ol` to only check direct child reply lists (not sibling threads).
+// `:scope > ol` restricts to direct child reply lists, not sibling threads.
 function hasValuableReplies(
   commentEl: HTMLElement,
   evaluations: Map<HTMLElement, FilterResult>
@@ -52,6 +52,23 @@ function hasValuableReplies(
   return false;
 }
 
+// Walks up nested <li> elements to find ancestor comment divs in the thread.
+function hasValuableAncestor(
+  commentEl: HTMLElement,
+  evaluations: Map<HTMLElement, FilterResult>
+): boolean {
+  let li = getFilterTarget(commentEl).parentElement?.closest('li');
+  while (li) {
+    const ancestor = li.querySelector<HTMLElement>(`:scope > ${COMMENT_SELECTOR}`);
+    if (ancestor) {
+      const result = evaluations.get(ancestor);
+      if (!result || !result.filtered) return true;
+    }
+    li = li.parentElement?.closest('li') || null;
+  }
+  return false;
+}
+
 function runCheapFilters(text: string, settings: FilterSettings): FilterResult | null {
   const lenResult = lengthFilter.test(text, settings);
   if (lenResult.filtered) return lenResult;
@@ -60,15 +77,31 @@ function runCheapFilters(text: string, settings: FilterSettings): FilterResult |
   return null;
 }
 
+// Apply filter to a comment only if it has no valuable ancestors or descendants.
+function applyIfIsolated(
+  el: HTMLElement,
+  evaluations: Map<HTMLElement, FilterResult>
+): void {
+  const result = evaluations.get(el);
+  if (
+    result?.filtered &&
+    !hasValuableAncestor(el, evaluations) &&
+    !hasValuableReplies(el, evaluations)
+  ) {
+    manipulator.applyFilter(getFilterTarget(el), result.reason);
+  }
+}
+
 let currentSettings: FilterSettings;
 let manipulator: DomManipulator;
 let observer: PostObserver;
 
 /**
- * 3-phase pipeline for batch processing all comments on the page:
- *   Phase 1 — Cheap sync filters (keyword + length), results applied immediately
- *   Phase 2 — Batch AI classification for survivors (single API call)
- *   Phase 3 — Apply AI results with valuable-reply protection
+ * 3-phase pipeline:
+ *   1. Cheap sync filters (keyword + length) — apply immediately
+ *   2. Batch AI classification for survivors (single API call)
+ *   3. Apply AI results
+ * A comment is only hidden if it has no valuable ancestors or descendants.
  */
 async function processAllComments(): Promise<void> {
   const commentEls = Array.from(
@@ -99,12 +132,8 @@ async function processAllComments(): Promise<void> {
     }
   }
 
-  // Apply cheap results without waiting for AI
   for (const el of commentEls) {
-    const result = evaluations.get(el);
-    if (result?.filtered && !hasValuableReplies(el, evaluations)) {
-      manipulator.applyFilter(getFilterTarget(el), result.reason);
-    }
+    applyIfIsolated(el, evaluations);
   }
 
   if (needsAi.length > 0) {
@@ -118,10 +147,7 @@ async function processAllComments(): Promise<void> {
     }
 
     for (const { el } of needsAi) {
-      const result = evaluations.get(el);
-      if (result?.filtered && !hasValuableReplies(el, evaluations)) {
-        manipulator.applyFilter(getFilterTarget(el), result.reason);
-      }
+      applyIfIsolated(el, evaluations);
     }
   }
 }
@@ -145,7 +171,15 @@ async function processSingleComment(el: HTMLElement): Promise<void> {
 
   if (!result.filtered) return;
 
-  // Check descendants before filtering — preserve threads with valuable replies
+  const parentLi = getFilterTarget(el).parentElement?.closest('li');
+  if (parentLi) {
+    const parentComment = parentLi.querySelector<HTMLElement>(`:scope > ${COMMENT_SELECTOR}`);
+    if (parentComment) {
+      const parentText = extractPostText(parentComment);
+      if (!parentText || !runCheapFilters(parentText, currentSettings)?.filtered) return;
+    }
+  }
+
   const li = getFilterTarget(el);
   const descendants = li.querySelectorAll<HTMLElement>(`:scope > ol ${COMMENT_SELECTOR}`);
   for (let i = 0; i < descendants.length; i++) {
@@ -159,16 +193,16 @@ async function processSingleComment(el: HTMLElement): Promise<void> {
   manipulator.applyFilter(getFilterTarget(el), result.reason);
 }
 
-// Re-process on SPA navigation. BF uses client-side routing so the content
-// script only loads once — we detect URL changes to catch thread navigations.
+// BF uses client-side routing — detect URL changes to re-process on navigation.
 function watchForSpaNavigation(): void {
   let lastUrl = location.href;
   new MutationObserver(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       manipulator.removeAllFilters();
-      // Short delay lets the SPA finish rendering the new page's comments
-      setTimeout(() => processAllComments(), 300);
+      if (isPostPage()) {
+        setTimeout(() => processAllComments(), 100);
+      }
     }
   }).observe(document.body, { childList: true, subtree: true });
 }
@@ -179,7 +213,9 @@ async function init(): Promise<void> {
 
   manipulator = new DomManipulator();
 
-  await processAllComments();
+  if (isPostPage()) {
+    await processAllComments();
+  }
 
   observer = new PostObserver((newPosts) => {
     newPosts.forEach((el) => processSingleComment(el));
@@ -191,7 +227,7 @@ async function init(): Promise<void> {
   onSettingsChanged(async (newSettings) => {
     currentSettings = newSettings;
     manipulator.removeAllFilters();
-    if (currentSettings.enabled) {
+    if (currentSettings.enabled && isPostPage()) {
       await processAllComments();
     }
   });
